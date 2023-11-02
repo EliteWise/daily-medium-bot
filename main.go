@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -13,8 +15,24 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
+type Secrets struct {
+	DiscordKey string `json:"discordKey"`
+}
+
 func main() {
-	sess, err := discordgo.New("Bot MTE2OTY0ODQyOTUzMDYyMDA3NA.GdHh4b.9ns2Sm0z0hmR0eEaSG19-s6euxywhJDuSDiv6k")
+	file, err := ioutil.ReadFile("secrets.json")
+	if err != nil {
+		log.Fatalf("Failed to read file: %s", err)
+	}
+
+	// Désérialiser le contenu du fichier dans une structure
+	var secrets Secrets
+	err = json.Unmarshal(file, &secrets)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal: %s", err)
+	}
+
+	sess, err := discordgo.New("Bot " + secrets.DiscordKey)
 	if err != nil {
 		log.Fatal(err)
 	}
