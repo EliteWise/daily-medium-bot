@@ -15,6 +15,7 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
+// Create a collection to store the discord key
 type Secrets struct {
 	DiscordKey string `json:"discordKey"`
 }
@@ -25,8 +26,8 @@ func main() {
 		log.Fatalf("Failed to read file: %s", err)
 	}
 
-	// Désérialiser le contenu du fichier dans une structure
 	var secrets Secrets
+	// Deserialization of the json file by passing a pointer to the secrets variable, to assign the result
 	err = json.Unmarshal(file, &secrets)
 	if err != nil {
 		log.Fatalf("Failed to unmarshal: %s", err)
@@ -40,6 +41,9 @@ func main() {
 	c := colly.NewCollector()
 	var href = ""
 
+	/* Register a callback function with colly's OnHTML method to be executed every time an HTML element matching the "h2" CSS selector is encountered during the scraping process.
+	* The callback function takes a pointer to a colly.HTMLElement as its argument, which represents the actual <h2> element found
+	 */
 	c.OnHTML("h2", func(e *colly.HTMLElement) {
 		if e.Text == "Recommended stories" {
 			e.DOM.ParentsUntil("~ a").Each(func(index int, sel *goquery.Selection) {
@@ -66,8 +70,7 @@ func main() {
 		log.Fatal(err1)
 	}
 
-	log.Println("Continue")
-
+	// Registers a callback function to handle incoming Discord messages, where `s` represents the current session and `m` represents the created message event.
 	sess.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if m.Author.ID == s.State.User.ID {
 			return
@@ -85,6 +88,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Ensures that function call is executed just before the main exits, used for cleanup task.
 	defer sess.Close()
 
 	fmt.Println("Online!")
