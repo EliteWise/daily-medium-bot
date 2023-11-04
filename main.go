@@ -1,16 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gocolly/colly/v2"
 )
@@ -20,43 +14,15 @@ type Secrets struct {
 	DiscordKey string `json:"discordKey"`
 }
 
-func serializeData(json_file string, value interface{}) error {
-	jsonData, err := json.Marshal(value)
-	if err != nil {
-		return fmt.Errorf("failed to marshal data: %w", err)
-	}
-
-	err = os.WriteFile(json_file, jsonData, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to write: %s", err)
-	}
-	return nil
-}
-
-func deserializeData(json_file string, value interface{}) error {
-	file, err := os.ReadFile(json_file)
-	if err != nil {
-		return fmt.Errorf("failed to read file: %s", err)
-	}
-	err = json.Unmarshal(file, value)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal: %s", err)
-	}
-	return nil
+type SetupData struct {
+	SelectedChannel string `json:"selectedChannel"`
+	HourToSend      string `json:"hourToSend"`
+	PreviousArticle string `json:"previousArticle"`
 }
 
 func main() {
-	file, err := ioutil.ReadFile("secrets.json")
-	if err != nil {
-		log.Fatalf("Failed to read file: %s", err)
-	}
-
 	var secrets Secrets
-	// Deserialization of the json file by passing a pointer to the secrets variable, to assign the result
-	err = json.Unmarshal(file, &secrets)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal: %s", err)
-	}
+	deserializeData("secrets.json", &secrets)
 
 	sess, err := discordgo.New("Bot " + secrets.DiscordKey)
 	if err != nil {
@@ -66,23 +32,18 @@ func main() {
 	c := colly.NewCollector()
 	var href = ""
 
-	/* Register a callback function with colly's OnHTML method to be executed every time an HTML element matching the "h2" CSS selector is encountered during the scraping process.
-	* The callback function takes a pointer to a colly.HTMLElement as its argument, which represents the actual <h2> element found
+	/* Try to get the first span that contains "hours" keyword, and then get the link above
 	 */
-	c.OnHTML("h2", func(e *colly.HTMLElement) {
-		if e.Text == "Recommended stories" {
-			e.DOM.ParentsUntil("~ a").Each(func(index int, sel *goquery.Selection) {
-				if href == "" {
-					sel.Find("a").Each(func(index int, aSel *goquery.Selection) {
-						if index == 0 {
-							relativeURL, _ := aSel.Attr("href")
-							long_href := e.Request.AbsoluteURL(relativeURL)
-							href = strings.Split(long_href, "?source")[0]
-						}
-					})
-				}
-
-			})
+	c.OnHTML("span", func(e *colly.HTMLElement) {
+		if strings.Contains(e.Text, "hours") {
+			a := e.DOM.ParentsUntil("body").Filter("a").First()
+			if href_, exists := a.Attr("href"); exists {
+				long_href := e.Request.AbsoluteURL(href_)
+				href = strings.Split(long_href, "?source")[0]
+				var setupData SetupData
+				setupData.PreviousArticle = href
+				serializeData("setup-data.json", setupData)
+			}
 		}
 	})
 
@@ -108,6 +69,112 @@ func main() {
 		}
 	})
 
+	// Define the new slash command.
+	var (
+		dailyCommand = &discordgo.ApplicationCommand{
+			Name:        "daily",
+			Description: "Responds with a daily article.",
+		}
+		setupCommand = &discordgo.ApplicationCommand{
+			Name:        "setup",
+			Description: "Sets up your daily preferences.",
+		}
+	)
+
+	sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		fmt.Printf("Online!")
+
+		// Register the command for the guild (server).
+		_, errCommand := sess.ApplicationCommandCreate(sess.State.Application.ID, "", dailyCommand)
+		if errCommand != nil {
+			log.Fatalf("Cannot create slash command: %v", errCommand)
+		}
+
+		_, errSetupCommand := sess.ApplicationCommandCreate(sess.State.Application.ID, "", setupCommand)
+		if errSetupCommand != nil {
+			log.Fatalf("Cannot create slash command: %v", errSetupCommand)
+		}
+	})
+
+	// Interactions Management like clicks on buttons
+	sess.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if i.Type == discordgo.InteractionMessageComponent {
+
+			// Use i.MessageComponentData().CustomID to identify the clicked button
+
+			switch i.MessageComponentData().CustomID {
+			case "private_message_mode":
+				s.ChannelMessageSend(i.ChannelID, "Private message mode selected.")
+			case "channel_mode":
+				s.ChannelMessageSend(i.ChannelID, "Channel mode selected.")
+			}
+
+			// Acknowledge the interaction
+			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+			})
+			if err != nil {
+				log.Println("Erreur lors de l'envoi de l'acknowledgement:", err)
+				return
+			}
+		}
+	})
+
+	// Add the handler for the newly created command.
+	sess.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if i.Type == discordgo.InteractionApplicationCommand {
+			if i.ApplicationCommandData().Name == "daily" {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Content: href,
+					},
+				})
+			} else if i.ApplicationCommandData().Name == "setup" {
+				components := make([]discordgo.MessageComponent, 0)
+
+				components = append(components, discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						&discordgo.Button{
+							Label:    "Private Message Mode",
+							Style:    discordgo.PrimaryButton,
+							CustomID: "private_message_mode",
+						},
+						&discordgo.Button{
+							Label:    "Channel Mode",
+							Style:    discordgo.SecondaryButton,
+							CustomID: "channel_mode",
+						},
+					},
+				})
+
+				embed := &discordgo.MessageEmbed{
+					Title:       "Medium Daily Configuration",
+					Description: "Choose your options for your daily articles.",
+					Fields: []*discordgo.MessageEmbedField{
+						{
+							Name:   "Private Message Mode",
+							Value:  "Send articles inside your DM",
+							Inline: true,
+						},
+						{
+							Name:   "Channel Mode",
+							Value:  "Send articles inside a custom channel",
+							Inline: true,
+						},
+					},
+				}
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Embeds:     []*discordgo.MessageEmbed{embed},
+						Components: components,
+					},
+				})
+			}
+		}
+	})
+
 	sess.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
 	err = sess.Open()
@@ -118,9 +185,5 @@ func main() {
 	// Ensures that function call is executed just before the main exits, used for cleanup task.
 	defer sess.Close()
 
-	fmt.Println("Online!")
-
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
+	waitForInterrupt()
 }
