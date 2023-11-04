@@ -20,6 +20,31 @@ type Secrets struct {
 	DiscordKey string `json:"discordKey"`
 }
 
+func serializeData(json_file string, value interface{}) error {
+	jsonData, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("failed to marshal data: %w", err)
+	}
+
+	err = os.WriteFile(json_file, jsonData, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write: %s", err)
+	}
+	return nil
+}
+
+func deserializeData(json_file string, value interface{}) error {
+	file, err := os.ReadFile(json_file)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %s", err)
+	}
+	err = json.Unmarshal(file, value)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal: %s", err)
+	}
+	return nil
+}
+
 func main() {
 	file, err := ioutil.ReadFile("secrets.json")
 	if err != nil {
@@ -78,6 +103,8 @@ func main() {
 
 		if m.Content == "!daily" {
 			s.ChannelMessageSend(m.ChannelID, href)
+		} else if m.Content == "!daily setup" {
+
 		}
 	})
 
