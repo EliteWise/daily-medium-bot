@@ -1,0 +1,68 @@
+{
+   "Embed_1": {
+        "title": "Title",
+        "description": "description",
+        "field_left": {
+            "name": "",
+            "value": ""
+        },
+        "field_right": {
+            "name": "",
+            "value": ""
+        },
+        "button_left": {
+            "label": "",
+            "style": "",
+            "customID": ""
+        },
+        "button_right": {
+            "label": "",
+            "style": "",
+            "customID": ""
+        }
+   },
+"Embed_2": {
+    "title": "Title",
+    "description": "description",
+    "field_left": {
+        "name": "",
+        "value": ""
+    },
+    "field_right": {
+        "name": "",
+        "value": ""
+    },
+    "button_left": {
+        "label": "",
+        "style": "",
+        "customID": ""
+    },
+    "button_right": {
+        "label": "",
+        "style": "",
+        "customID": ""
+    }
+},
+"Embed_3": {
+    "title": "Title",
+    "description": "description",
+    "field_left": {
+        "name": "",
+        "value": ""
+    },
+    "field_right": {
+        "name": "",
+        "value": ""
+    },
+    "button_left": {
+        "label": "",
+        "style": "",
+        "customID": ""
+    },
+    "button_right": {
+        "label": "",
+        "style": "",
+        "customID": ""
+    }
+}
+}

@@ -107,6 +107,7 @@ func main() {
 				s.ChannelMessageSend(i.ChannelID, "Private message mode selected.")
 			case "channel_mode":
 				s.ChannelMessageSend(i.ChannelID, "Channel mode selected.")
+				updateEmbed(s, i, "", "", "", "", "", "")
 			}
 
 			// Acknowledge the interaction
