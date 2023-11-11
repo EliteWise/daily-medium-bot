@@ -20,6 +20,26 @@ type SetupData struct {
 	PreviousArticle string `json:"previousArticle"`
 }
 
+type Field struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type Button struct {
+	Label    string `json:"label"`
+	Style    string `json:"style"`
+	CustomID string `json:"customID"`
+}
+
+type Embed struct {
+	Title       string `json:"title"`
+	Description string `json:"Description"`
+	FieldLeft   Field  `json:"field_left"`
+	FieldRight  Field  `json:"field_right"`
+	ButtonLeft  Button `json:"button_left"`
+	ButtonRight Button `json:"button_right"`
+}
+
 func main() {
 	var secrets Secrets
 	deserializeData("secrets.json", &secrets)
