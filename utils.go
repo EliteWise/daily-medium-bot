@@ -90,4 +90,16 @@ func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, fie
 	if err != nil {
 		log.Printf("Failed to update Embed: %v", err)
 	}
+
+}
+
+func retrieveChannels(session *discordgo.Session, i *discordgo.InteractionCreate) []string {
+	channels, _ := session.GuildChannels(i.GuildID)
+	channelsNames := []string{}
+
+	for _, channel := range channels {
+		channelsNames = append(channelsNames, channel.Name)
+	}
+
+	return channelsNames
 }
