@@ -102,6 +102,8 @@ func main() {
 	)
 
 	sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		retrieveMediumCategories()
+
 		fmt.Printf("Online!")
 
 		// Register the command for the guild (server).
