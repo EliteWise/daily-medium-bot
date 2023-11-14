@@ -1,68 +1,20 @@
 {
-   "Embed_1": {
-        "title": "Title",
-        "description": "description",
-        "field_left": {
-            "name": "",
-            "value": ""
-        },
-        "field_right": {
-            "name": "",
-            "value": ""
-        },
-        "button_left": {
-            "label": "",
-            "style": "",
-            "customID": ""
-        },
-        "button_right": {
-            "label": "",
-            "style": "",
-            "customID": ""
-        }
+    "channel_config": {
+        "title": "Channel Configuration",
+        "description": "Pick a channel to send your daily article.",
+        "customID": "channel_config",
+        "placeholder": "Channel Selection"
    },
-"Embed_2": {
-    "title": "Title",
-    "description": "description",
-    "field_left": {
-        "name": "",
-        "value": ""
-    },
-    "field_right": {
-        "name": "",
-        "value": ""
-    },
-    "button_left": {
-        "label": "",
-        "style": "",
-        "customID": ""
-    },
-    "button_right": {
-        "label": "",
-        "style": "",
-        "customID": ""
-    }
+   "medium_category": {
+        "title": "Selection of Medium Category",
+        "description": "Select an article category.",
+        "customID": "medium_category",
+        "placeholder": "Category Selection"
 },
-"Embed_3": {
-    "title": "Title",
-    "description": "description",
-    "field_left": {
-        "name": "",
-        "value": ""
-    },
-    "field_right": {
-        "name": "",
-        "value": ""
-    },
-    "button_left": {
-        "label": "",
-        "style": "",
-        "customID": ""
-    },
-    "button_right": {
-        "label": "",
-        "style": "",
-        "customID": ""
+    "time_config": {
+        "title": "Definition of the send Time",
+        "description": "Set the time for sending your article.",
+        "customID": "time_config",
+        "placeholder": "Time Selection"
     }
-}
 }

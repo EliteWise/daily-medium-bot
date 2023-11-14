@@ -102,8 +102,6 @@ func main() {
 	)
 
 	sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		retrieveMediumCategories()
-
 		fmt.Printf("Online!")
 
 		// Register the command for the guild (server).
@@ -129,7 +127,10 @@ func main() {
 				s.ChannelMessageSend(i.ChannelID, "Private message mode selected.")
 			case "channel_mode":
 				s.ChannelMessageSend(i.ChannelID, "Channel mode selected.")
-				updateEmbed(s, i, "", "", "", "", "", "")
+				mediumCatList := retrieveMediumCategories().MediumCategories
+				updateEmbed(s, i, "Menu Item", "Desc Menu Item", mediumCatList)
+			case "custom_menu":
+				log.Println(i.MessageComponentData().Values[0])
 			}
 
 			// Acknowledge the interaction

@@ -43,47 +43,36 @@ func waitForInterrupt() {
 	<-sc
 }
 
-func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, field_left_name string, field_left_value string, field_right_name string, field_right_value string, button_left_label string, button_right_label string) {
+func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, title string, description string, options []string) {
 	currentEmbed := i.Message.Embeds[0]
 	embed := &discordgo.MessageEmbed{
 		Title:       currentEmbed.Title,
 		Description: currentEmbed.Description,
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   field_left_name,
-				Value:  field_left_value,
-				Inline: true,
-			},
-			{
-				Name:   field_right_name,
-				Value:  field_right_value,
-				Inline: true,
-			},
-		},
 	}
 
-	components := []discordgo.MessageComponent{
-		discordgo.ActionsRow{
-			Components: []discordgo.MessageComponent{
-				&discordgo.Button{
-					Label:    button_left_label,
-					Style:    discordgo.PrimaryButton,
-					CustomID: "button_left",
-				},
-				&discordgo.Button{
-					Label:    button_right_label,
-					Style:    discordgo.SecondaryButton,
-					CustomID: "button_right",
-				},
-			},
-		},
+	selectMenuOptions := make([]discordgo.SelectMenuOption, len(options))
+	for i, optionString := range options {
+		selectMenuOptions[i] = discordgo.SelectMenuOption{
+			Label: optionString,
+			Value: optionString,
+		}
+	}
+
+	selectMenu := &discordgo.SelectMenu{
+		CustomID:    "custom_menu",
+		Placeholder: "Select an option",
+		Options:     selectMenuOptions,
+	}
+
+	row := &discordgo.ActionsRow{
+		Components: []discordgo.MessageComponent{selectMenu},
 	}
 
 	err := session.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{embed},
-			Components: components,
+			Components: []discordgo.MessageComponent{row},
 		},
 	})
 
