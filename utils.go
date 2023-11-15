@@ -43,11 +43,10 @@ func waitForInterrupt() {
 	<-sc
 }
 
-func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, title string, description string, options []string) {
-	currentEmbed := i.Message.Embeds[0]
+func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, title string, description string, customID string, options []string) {
 	embed := &discordgo.MessageEmbed{
-		Title:       currentEmbed.Title,
-		Description: currentEmbed.Description,
+		Title:       title,
+		Description: description,
 	}
 
 	selectMenuOptions := make([]discordgo.SelectMenuOption, len(options))
@@ -59,7 +58,7 @@ func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, tit
 	}
 
 	selectMenu := &discordgo.SelectMenu{
-		CustomID:    "custom_menu",
+		CustomID:    customID,
 		Placeholder: "Select an option",
 		Options:     selectMenuOptions,
 	}
@@ -80,4 +79,8 @@ func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, tit
 		log.Printf("Failed to update Embed: %v", err)
 	}
 
+}
+
+func removeEmbed(session *discordgo.Session, i *discordgo.InteractionCreate) {
+	session.ChannelMessageDelete(i.Message.ChannelID, i.Message.ID)
 }

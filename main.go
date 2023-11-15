@@ -15,29 +15,67 @@ type Secrets struct {
 }
 
 type SetupData struct {
+	Mode            string `json:"mode"`
 	SelectedChannel string `json:"selectedChannel"`
+	MediumCategory  string `json:"mediumCategory"`
 	HourToSend      string `json:"hourToSend"`
 	PreviousArticle string `json:"previousArticle"`
 }
 
-type Field struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type Button struct {
-	Label    string `json:"label"`
-	Style    string `json:"style"`
-	CustomID string `json:"customID"`
-}
-
 type Embed struct {
 	Title       string `json:"title"`
-	Description string `json:"Description"`
-	FieldLeft   Field  `json:"field_left"`
-	FieldRight  Field  `json:"field_right"`
-	ButtonLeft  Button `json:"button_left"`
-	ButtonRight Button `json:"button_right"`
+	Description string `json:"description"`
+	CustomID    string `json:"customID"`
+}
+
+type EmbedsMap map[string]Embed
+
+const (
+	EMBEDS_SOURCE = "embeds.json"
+	CONFIG_SOURCE = "setup-data.json"
+)
+
+func setupEmbed(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	components := make([]discordgo.MessageComponent, 0)
+
+	components = append(components, discordgo.ActionsRow{
+		Components: []discordgo.MessageComponent{
+			&discordgo.Button{
+				Label:    "Private Message Mode",
+				Style:    discordgo.PrimaryButton,
+				CustomID: "private_message_mode",
+			},
+			&discordgo.Button{
+				Label:    "Channel Mode",
+				Style:    discordgo.SecondaryButton,
+				CustomID: "channel_mode",
+			},
+		},
+	})
+
+	embed := &discordgo.MessageEmbed{
+		Title:       "Medium Daily Configuration",
+		Description: "Choose your options for your daily articles.",
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Private Message Mode",
+				Value:  "Send articles inside your DM",
+				Inline: true,
+			},
+			{
+				Name:   "Channel Mode",
+				Value:  "Send articles inside a custom channel",
+				Inline: true,
+			},
+		},
+	}
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: components,
+		},
+	})
 }
 
 func main() {
@@ -62,7 +100,7 @@ func main() {
 				href = strings.Split(long_href, "?source")[0]
 				var setupData SetupData
 				setupData.PreviousArticle = href
-				serializeData("setup-data.json", setupData)
+				serializeData(CONFIG_SOURCE, setupData)
 			}
 		}
 	})
@@ -84,8 +122,6 @@ func main() {
 
 		if m.Content == "!daily" {
 			s.ChannelMessageSend(m.ChannelID, href)
-		} else if m.Content == "!daily setup" {
-
 		}
 	})
 
@@ -121,16 +157,52 @@ func main() {
 		if i.Type == discordgo.InteractionMessageComponent {
 
 			// Use i.MessageComponentData().CustomID to identify the clicked button
+			var embed EmbedsMap
+			var setupData SetupData
+			deserializeData(EMBEDS_SOURCE, &embed)
+			var responseSelected string
+			if len(i.MessageComponentData().Values) > 0 {
+				responseSelected = i.MessageComponentData().Values[0]
+			}
+			deserializeData(CONFIG_SOURCE, &setupData)
 
 			switch i.MessageComponentData().CustomID {
 			case "private_message_mode":
-				s.ChannelMessageSend(i.ChannelID, "Private message mode selected.")
-			case "channel_mode":
-				s.ChannelMessageSend(i.ChannelID, "Channel mode selected.")
+				categories_embed := embed["medium_category"]
+
 				mediumCatList := retrieveMediumCategories().MediumCategories
-				updateEmbed(s, i, "Menu Item", "Desc Menu Item", mediumCatList)
-			case "custom_menu":
-				log.Println(i.MessageComponentData().Values[0])
+				updateEmbed(s, i, categories_embed.Title, categories_embed.Description, categories_embed.CustomID, mediumCatList)
+
+				setupData.Mode = i.MessageComponentData().CustomID
+				serializeData(CONFIG_SOURCE, setupData)
+			case "channel_mode":
+				config_embed := embed["channel_config"]
+
+				updateEmbed(s, i, config_embed.Title, config_embed.Description, config_embed.CustomID, retrieveChannels(s, i))
+
+				setupData.Mode = i.MessageComponentData().CustomID
+				serializeData(CONFIG_SOURCE, setupData)
+			case "channel_config":
+				categories_embed := embed["medium_category"]
+
+				mediumCatList := retrieveMediumCategories().MediumCategories
+				updateEmbed(s, i, categories_embed.Title, categories_embed.Description, categories_embed.CustomID, mediumCatList)
+
+				setupData.SelectedChannel = responseSelected
+				serializeData(CONFIG_SOURCE, setupData)
+			case "medium_category":
+				time_embed := embed["time_config"]
+
+				updateEmbed(s, i, time_embed.Title, time_embed.Description, time_embed.CustomID, retrieveDayHours())
+
+				setupData.MediumCategory = responseSelected
+				serializeData(CONFIG_SOURCE, setupData)
+			case "time_config":
+				setupData.HourToSend = responseSelected
+				serializeData(CONFIG_SOURCE, setupData)
+
+				removeEmbed(s, i)
+				s.ChannelMessageSend(i.ChannelID, "Configuration complete!")
 			}
 
 			// Acknowledge the interaction
@@ -155,46 +227,7 @@ func main() {
 					},
 				})
 			} else if i.ApplicationCommandData().Name == "setup" {
-				components := make([]discordgo.MessageComponent, 0)
-
-				components = append(components, discordgo.ActionsRow{
-					Components: []discordgo.MessageComponent{
-						&discordgo.Button{
-							Label:    "Private Message Mode",
-							Style:    discordgo.PrimaryButton,
-							CustomID: "private_message_mode",
-						},
-						&discordgo.Button{
-							Label:    "Channel Mode",
-							Style:    discordgo.SecondaryButton,
-							CustomID: "channel_mode",
-						},
-					},
-				})
-
-				embed := &discordgo.MessageEmbed{
-					Title:       "Medium Daily Configuration",
-					Description: "Choose your options for your daily articles.",
-					Fields: []*discordgo.MessageEmbedField{
-						{
-							Name:   "Private Message Mode",
-							Value:  "Send articles inside your DM",
-							Inline: true,
-						},
-						{
-							Name:   "Channel Mode",
-							Value:  "Send articles inside a custom channel",
-							Inline: true,
-						},
-					},
-				}
-				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-					Type: discordgo.InteractionResponseChannelMessageWithSource,
-					Data: &discordgo.InteractionResponseData{
-						Embeds:     []*discordgo.MessageEmbed{embed},
-						Components: components,
-					},
-				})
+				setupEmbed(s, i)
 			}
 		}
 	})
