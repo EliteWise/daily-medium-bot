@@ -84,3 +84,39 @@ func updateEmbed(session *discordgo.Session, i *discordgo.InteractionCreate, tit
 func removeEmbed(session *discordgo.Session, i *discordgo.InteractionCreate) {
 	session.ChannelMessageDelete(i.Message.ChannelID, i.Message.ID)
 }
+
+func sendDM(userID string, message string) {
+	channel, err := sess.UserChannelCreate(userID)
+	if err != nil {
+		log.Printf("Failed to create a new private channel: %v", err)
+		return
+	}
+
+	_, err = sess.ChannelMessageSend(channel.ID, message)
+	if err != nil {
+		log.Printf("Error while sending the message: %v", err)
+	}
+}
+
+func sendToChannel(channelID string, message string) {
+	_, err := sess.ChannelMessageSend(channelID, message)
+	if err != nil {
+		log.Printf("Error while sending the message: %v", err)
+	}
+}
+
+func findChannelIDByName(guildID string, channelName string) (string, error) {
+	channels, err := sess.GuildChannels(guildID)
+
+	if err != nil {
+		return "", err
+	}
+
+	for _, channel := range channels {
+		if channel.Name == channelName {
+			return channel.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("Channel not found")
+}

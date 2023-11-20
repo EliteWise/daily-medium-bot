@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/robfig/cron/v3"
 )
@@ -17,7 +16,13 @@ func sendArticle() {
 
 	// Add the task to be executed every day
 	c.AddFunc(cronExpression, func() {
-		fmt.Println("Send: ", time.Now())
+		var setupData SetupData
+		deserializeData(CONFIG_SOURCE, &setupData)
+		if setupData.Mode == "channel_mode" {
+			sendToChannel(setupData.SelectedChannelID, searchArticle())
+		} else {
+			sendDM(setupData.UserID, searchArticle())
+		}
 	})
 
 	c.Start()

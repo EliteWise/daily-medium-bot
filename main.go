@@ -9,17 +9,20 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
+var sess *discordgo.Session
+
 // Create a collection to store the discord key
 type Secrets struct {
 	DiscordKey string `json:"discordKey"`
 }
 
 type SetupData struct {
-	Mode            string `json:"mode"`
-	SelectedChannel string `json:"selectedChannel"`
-	MediumCategory  string `json:"mediumCategory"`
-	HourToSend      string `json:"hourToSend"`
-	PreviousArticle string `json:"previousArticle"`
+	Mode              string `json:"mode"`
+	UserID            string `json:"userID"`
+	SelectedChannelID string `json:"selectedChannelID"`
+	MediumCategory    string `json:"mediumCategory"`
+	HourToSend        string `json:"hourToSend"`
+	PreviousArticle   string `json:"previousArticle"`
 }
 
 type Embed struct {
@@ -78,15 +81,7 @@ func setupEmbed(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func main() {
-	var secrets Secrets
-	deserializeData("secrets.json", &secrets)
-
-	sess, err := discordgo.New("Bot " + secrets.DiscordKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func searchArticle() string {
 	c := colly.NewCollector()
 	var href = ""
 
@@ -114,6 +109,18 @@ func main() {
 		log.Fatal(err1)
 	}
 
+	return href
+}
+
+func main() {
+	var secrets Secrets
+	deserializeData("secrets.json", &secrets)
+
+	sess, err := discordgo.New("Bot " + secrets.DiscordKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Registers a callback function to handle incoming Discord messages, where `s` represents the current session and `m` represents the created message event.
 	sess.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if m.Author.ID == s.State.User.ID {
@@ -121,7 +128,7 @@ func main() {
 		}
 
 		if m.Content == "!daily" {
-			s.ChannelMessageSend(m.ChannelID, href)
+			s.ChannelMessageSend(m.ChannelID, searchArticle())
 		}
 	})
 
@@ -188,7 +195,7 @@ func main() {
 				mediumCatList := retrieveMediumCategories().MediumCategories
 				updateEmbed(s, i, categories_embed.Title, categories_embed.Description, categories_embed.CustomID, mediumCatList)
 
-				setupData.SelectedChannel = responseSelected
+				setupData.SelectedChannelID, _ = findChannelIDByName(i.GuildID, responseSelected)
 				serializeData(CONFIG_SOURCE, setupData)
 			case "medium_category":
 				time_embed := embed["time_config"]
@@ -199,9 +206,11 @@ func main() {
 				serializeData(CONFIG_SOURCE, setupData)
 			case "time_config":
 				setupData.HourToSend = responseSelected
+				setupData.UserID = i.User.ID
 				serializeData(CONFIG_SOURCE, setupData)
 
 				removeEmbed(s, i)
+				sendArticle()
 				s.ChannelMessageSend(i.ChannelID, "Configuration complete!")
 			}
 
@@ -223,7 +232,7 @@ func main() {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
-						Content: href,
+						Content: searchArticle(),
 					},
 				})
 			} else if i.ApplicationCommandData().Name == "setup" {
