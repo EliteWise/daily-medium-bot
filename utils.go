@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -119,4 +120,11 @@ func findChannelIDByName(guildID string, channelName string) (string, error) {
 	}
 
 	return "", fmt.Errorf("Channel not found")
+}
+
+func getRandomCategory() string {
+	var categories MediumCategories
+	deserializeData(CATEGORIES_SOURCE, &categories)
+
+	return categories.MC[rand.Intn(len(categories.MC))]
 }

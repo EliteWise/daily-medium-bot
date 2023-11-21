@@ -31,11 +31,16 @@ type Embed struct {
 	CustomID    string `json:"customID"`
 }
 
+type MediumCategories struct {
+	MC []string `json:"mc"`
+}
+
 type EmbedsMap map[string]Embed
 
 const (
-	EMBEDS_SOURCE = "embeds.json"
-	CONFIG_SOURCE = "setup-data.json"
+	EMBEDS_SOURCE     = "embeds.json"
+	CONFIG_SOURCE     = "setup-data.json"
+	CATEGORIES_SOURCE = "medium-categories.json"
 )
 
 func setupEmbed(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -81,7 +86,7 @@ func setupEmbed(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func searchArticle() string {
+func searchArticle(channelID string) string {
 	c := colly.NewCollector()
 	var href = ""
 
@@ -104,9 +109,22 @@ func searchArticle() string {
 		log.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
 
-	err1 := c.Visit("https://medium.com/tag/programming")
-	if err1 != nil {
-		log.Fatal(err1)
+	var setupData SetupData
+	deserializeData(CONFIG_SOURCE, &setupData)
+	var mc = setupData.MediumCategory
+	if len(mc) != 0 {
+		err1 := c.Visit("https://medium.com/tag/" + setupData.MediumCategory)
+		if err1 != nil {
+			log.Fatal(err1)
+		}
+	} else {
+		sess.ChannelMessageSend(channelID, "You need to make a configuration with /setup command.")
+		sess.ChannelMessageSend(channelID, "A random article is sent at the moment.")
+
+		err1 := c.Visit("https://medium.com/tag/" + getRandomCategory())
+		if err1 != nil {
+			log.Fatal(err1)
+		}
 	}
 
 	return href
@@ -128,7 +146,7 @@ func main() {
 		}
 
 		if m.Content == "!daily" {
-			s.ChannelMessageSend(m.ChannelID, searchArticle())
+			s.ChannelMessageSend(m.ChannelID, searchArticle(m.ChannelID))
 		}
 	})
 
@@ -232,7 +250,7 @@ func main() {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
-						Content: searchArticle(),
+						Content: searchArticle(i.ChannelID),
 					},
 				})
 			} else if i.ApplicationCommandData().Name == "setup" {
