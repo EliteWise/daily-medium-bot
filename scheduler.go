@@ -8,16 +8,18 @@ import (
 
 func sendArticle() {
 	// Create new scheduler
-	c := cron.New()
+	c := cron.New(cron.WithSeconds())
 
-	var setupData SetupData
-	sendingTime := deserializeData(CONFIG_SOURCE, setupData.HourToSend)
-	cronExpression := fmt.Sprintf("0 %d * * *", sendingTime)
+	fmt.Printf("Scheduler is starting...")
+
+	//var setupData SetupData
+	//sendingTime := deserializeData(CONFIG_SOURCE, setupData.HourToSend)
+	//cronExpression := fmt.Sprintf("0 %d * * *", sendingTime)
 
 	emptyID := ""
 
 	// Add the task to be executed every day
-	c.AddFunc(cronExpression, func() {
+	c.AddFunc("*/15 * * * * *", func() {
 		var setupData SetupData
 		deserializeData(CONFIG_SOURCE, &setupData)
 		if setupData.Mode == "channel_mode" {

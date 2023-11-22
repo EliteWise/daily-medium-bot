@@ -118,8 +118,8 @@ func searchArticle(channelID string) string {
 			log.Fatal(err1)
 		}
 	} else {
-		sess.ChannelMessageSend(channelID, "You need to make a configuration with /setup command.")
-		sess.ChannelMessageSend(channelID, "A random article is sent at the moment.")
+		sess.ChannelMessageSend(channelID, "➤ You need to make a configuration with `/setup` command.")
+		sess.ChannelMessageSend(channelID, "➤ A random article is sent at the moment.")
 
 		err1 := c.Visit("https://medium.com/tag/" + getRandomCategory())
 		if err1 != nil {
@@ -134,7 +134,8 @@ func main() {
 	var secrets Secrets
 	deserializeData("secrets.json", &secrets)
 
-	sess, err := discordgo.New("Bot " + secrets.DiscordKey)
+	var err error
+	sess, err = discordgo.New("Bot " + secrets.DiscordKey) // Use the global sess
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -224,12 +225,14 @@ func main() {
 				serializeData(CONFIG_SOURCE, setupData)
 			case "time_config":
 				setupData.HourToSend = responseSelected
-				setupData.UserID = i.User.ID
+				setupData.UserID = i.Interaction.Member.User.ID
 				serializeData(CONFIG_SOURCE, setupData)
+
+				s.ChannelMessageSend(i.ChannelID, "Configuration complete!")
 
 				removeEmbed(s, i)
 				sendArticle()
-				s.ChannelMessageSend(i.ChannelID, "Configuration complete!")
+
 			}
 
 			// Acknowledge the interaction
