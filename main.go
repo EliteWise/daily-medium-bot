@@ -99,6 +99,7 @@ func searchArticle(channelID string) string {
 				long_href := e.Request.AbsoluteURL(href_)
 				href = strings.Split(long_href, "?source")[0]
 				var setupData SetupData
+				deserializeData(CONFIG_SOURCE, &setupData)
 				setupData.PreviousArticle = href
 				serializeData(CONFIG_SOURCE, setupData)
 			}
@@ -113,7 +114,7 @@ func searchArticle(channelID string) string {
 	deserializeData(CONFIG_SOURCE, &setupData)
 	var mc = setupData.MediumCategory
 	if len(mc) != 0 {
-		err1 := c.Visit("https://medium.com/tag/" + setupData.MediumCategory)
+		err1 := c.Visit("https://medium.com/tag/" + mc)
 		if err1 != nil {
 			log.Fatal(err1)
 		}
