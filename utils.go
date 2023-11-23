@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -127,4 +128,8 @@ func getRandomCategory() string {
 	deserializeData(CATEGORIES_SOURCE, &categories)
 
 	return categories.MC[rand.Intn(len(categories.MC))]
+}
+
+func convertTimeToCron(time string) string {
+	return strings.Replace(strings.Replace(time, "am", "", -1), "pm", "", -1)
 }

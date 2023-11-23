@@ -33,11 +33,22 @@ func retrieveMediumCategories() Categories {
 func retrieveDayHours() []string {
 	var dayHours []string
 	for hour := 0; hour < 24; hour++ {
-		if hour < 12 {
-			dayHours = append(dayHours, (strconv.Itoa(hour) + "am"))
-		} else {
-			dayHours = append(dayHours, (strconv.Itoa(hour) + "pm"))
+		hourDisplay := hour
+
+		if hour == 0 {
+			// Midnight
+			hourDisplay = 12
+		} else if hour > 12 {
+			// Afternoon
+			hourDisplay = hour - 12
 		}
+
+		suffix := "am"
+		if hour >= 12 {
+			suffix = "pm"
+		}
+
+		dayHours = append(dayHours, strconv.Itoa(hourDisplay)+suffix)
 	}
 	return dayHours
 }

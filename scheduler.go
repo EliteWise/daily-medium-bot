@@ -13,8 +13,8 @@ func sendArticle() {
 	fmt.Printf("Scheduler is starting...")
 
 	var setupData SetupData
-	sendingTime := deserializeData(CONFIG_SOURCE, setupData.HourToSend)
-	cronExpression := fmt.Sprintf("0 %d * * *", sendingTime)
+	deserializeData(CONFIG_SOURCE, &setupData)
+	cronExpression := fmt.Sprintf("0 %s * * *", convertTimeToCron(setupData.HourToSend))
 
 	emptyID := ""
 
