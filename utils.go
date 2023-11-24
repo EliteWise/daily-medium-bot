@@ -7,8 +7,10 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -130,6 +132,19 @@ func getRandomCategory() string {
 	return categories.MC[rand.Intn(len(categories.MC))]
 }
 
-func convertTimeToCron(time string) string {
-	return strings.Replace(strings.Replace(time, "am", "", -1), "pm", "", -1)
+func convertTimeToCron(timeData string) (string, error) {
+	timeData = strings.ToUpper(timeData)
+	timeFormatted, err := time.Parse("3PM", timeData)
+	if err != nil {
+		return "", err
+	}
+
+	timeFormattedEN := timeFormatted.Format("15")
+
+	cronTime, err := strconv.Atoi(timeFormattedEN)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.Itoa(cronTime), nil
 }

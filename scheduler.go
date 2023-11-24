@@ -8,13 +8,17 @@ import (
 
 func sendArticle() {
 	// Create new scheduler
-	c := cron.New(cron.WithSeconds()) // To use seconds, add: `cron.WithSeconds()` inside New() func
+	c := cron.New() // To use seconds, add: `cron.WithSeconds()` inside New() func
 
 	fmt.Printf("Scheduler is starting...")
 
 	var setupData SetupData
 	deserializeData(CONFIG_SOURCE, &setupData)
-	cronExpression := fmt.Sprintf("0 %s * * *", convertTimeToCron(setupData.HourToSend))
+	timeConverter, err := convertTimeToCron(setupData.HourToSend)
+	if err != nil {
+		fmt.Println(err)
+	}
+	cronExpression := fmt.Sprintf("0 %s * * *", timeConverter)
 
 	emptyID := ""
 
