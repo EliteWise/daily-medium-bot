@@ -87,8 +87,11 @@ func setupEmbed(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func searchArticle(channelID string) string {
-	c := colly.NewCollector()
 	var href = ""
+	var setupData SetupData
+	deserializeData(CONFIG_SOURCE, &setupData)
+
+	c := colly.NewCollector()
 
 	/* Try to get the first span that contains "hours" keyword, and then get the link above
 	 */
@@ -98,8 +101,6 @@ func searchArticle(channelID string) string {
 			if href_, exists := a.Attr("href"); exists {
 				long_href := e.Request.AbsoluteURL(href_)
 				href = strings.Split(long_href, "?source")[0]
-				var setupData SetupData
-				deserializeData(CONFIG_SOURCE, &setupData)
 				setupData.PreviousArticle = href
 				serializeData(CONFIG_SOURCE, setupData)
 			}
@@ -110,10 +111,10 @@ func searchArticle(channelID string) string {
 		log.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
 	})
 
-	var setupData SetupData
-	deserializeData(CONFIG_SOURCE, &setupData)
 	var mc = setupData.MediumCategory
+	log.Println(mc)
 	if len(mc) != 0 {
+		mc = strings.Replace(mc, " ", "-", -1)
 		err1 := c.Visit("https://medium.com/tag/" + mc)
 		if err1 != nil {
 			log.Fatal(err1)
