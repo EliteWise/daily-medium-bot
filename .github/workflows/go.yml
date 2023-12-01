@@ -1,0 +1,50 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker with Debian
+      uses: addnab/docker-run-action@v3
+      with:
+        image: debian:latest
+        options: --workdir /github/workspace
+
+    - name: Install Go
+      run: |
+        apt-get update
+        apt-get install -y golang-go
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install Dependencies
+      run: go mod download
+
+    - name: Run with Hot-Reload
+      run: |
+        go get -u github.com/cosmtrek/air
+        air
+
