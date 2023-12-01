@@ -96,7 +96,7 @@ func searchArticle(channelID string) string {
 	/* Try to get the first span that contains "hours" keyword, and then get the link above
 	 */
 	c.OnHTML("span", func(e *colly.HTMLElement) {
-		if strings.Contains(e.Text, "hours") {
+		if strings.Contains(e.Text, "hours") || strings.Contains(e.Text, "Just now") {
 			a := e.DOM.ParentsUntil("body").Filter("a").First()
 			if href_, exists := a.Attr("href"); exists {
 				long_href := e.Request.AbsoluteURL(href_)
