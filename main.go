@@ -92,6 +92,7 @@ func searchArticle(channelID string) string {
 	deserializeData(CONFIG_SOURCE, &setupData)
 
 	c := colly.NewCollector()
+	var hrefSlice []string
 
 	/* Try to get the first span that contains "hours" keyword, and then get the link above
 	 */
@@ -101,10 +102,7 @@ func searchArticle(channelID string) string {
 			if href_, exists := a.Attr("href"); exists {
 				long_href := e.Request.AbsoluteURL(href_)
 				href = strings.Split(long_href, "?source")[0]
-				if setupData.PreviousArticle != "" && setupData.PreviousArticle != href {
-					setupData.PreviousArticle = href
-					serializeData(CONFIG_SOURCE, setupData)
-				}
+				hrefSlice = append(hrefSlice, href)
 			}
 		}
 	})
@@ -128,6 +126,14 @@ func searchArticle(channelID string) string {
 		err1 := c.Visit("https://medium.com/tag/" + getRandomCategory())
 		if err1 != nil {
 			log.Fatal(err1)
+		}
+	}
+
+	for _, value := range hrefSlice {
+		if !strings.Contains(value, setupData.PreviousArticle) {
+			setupData.PreviousArticle = value
+			serializeData(CONFIG_SOURCE, setupData)
+			return value
 		}
 	}
 
