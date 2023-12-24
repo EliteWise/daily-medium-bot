@@ -101,8 +101,10 @@ func searchArticle(channelID string) string {
 			if href_, exists := a.Attr("href"); exists {
 				long_href := e.Request.AbsoluteURL(href_)
 				href = strings.Split(long_href, "?source")[0]
-				setupData.PreviousArticle = href
-				serializeData(CONFIG_SOURCE, setupData)
+				if setupData.PreviousArticle != "" && setupData.PreviousArticle != href {
+					setupData.PreviousArticle = href
+					serializeData(CONFIG_SOURCE, setupData)
+				}
 			}
 		}
 	})
