@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -94,14 +95,22 @@ func searchArticle(channelID string) string {
 	c := colly.NewCollector()
 	var hrefSlice []string
 
-	/* Try to get the first span that contains "hours" keyword, and then get the link above
-	 */
+	re := regexp.MustCompile(`\d+\s*h(?:ours?)?\s*ago`)
+
 	c.OnHTML("span", func(e *colly.HTMLElement) {
-		if strings.Contains(e.Text, "hours") || strings.Contains(e.Text, "Just now") {
+		if re.MatchString(e.Text) {
+
+			// Search <a> elements inside parent
 			a := e.DOM.ParentsUntil("body").Filter("a").First()
+
+			// If no <a> parent is found, then search inside next ones
+			if a.Length() == 0 {
+				a = e.DOM.ParentsUntil("body").Find("a").First()
+			}
+
 			if href_, exists := a.Attr("href"); exists {
 				long_href := e.Request.AbsoluteURL(href_)
-				href = strings.Split(long_href, "?source")[0]
+				href := strings.Split(long_href, "?source")[0]
 				hrefSlice = append(hrefSlice, href)
 			}
 		}
