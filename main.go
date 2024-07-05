@@ -146,6 +146,7 @@ func searchArticle(channelID string) string {
 		}
 	}
 
+	fmt.Print(href)
 	return href
 }
 
