@@ -9,7 +9,6 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gocolly/colly/v2"
-	"golang.org/x/exp/slices"
 )
 
 var sess *discordgo.Session
@@ -120,15 +119,11 @@ func searchArticle(channelID string) string {
 				if href_, exists := a.Attr("href"); exists {
 					long_href := e.Request.AbsoluteURL(href_)
 					href := strings.Split(long_href, "?source")[0]
-					if !slices.Contains(hrefSlice, href) {
-						if len(strings.Split(href, "/")) > 4 {
-							hrefSlice = append(hrefSlice, href)
-							break
-						} else {
-							e = &colly.HTMLElement{DOM: a.Next()}
-						}
-					} else {
+					if len(strings.Split(href, "/")) > 4 {
+						hrefSlice = append(hrefSlice, href)
 						break
+					} else {
+						e = &colly.HTMLElement{DOM: a.Next()}
 					}
 				} else {
 					break
