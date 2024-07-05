@@ -111,9 +111,7 @@ func searchArticle(channelID string) string {
 			if href_, exists := a.Attr("href"); exists {
 				long_href := e.Request.AbsoluteURL(href_)
 				href := strings.Split(long_href, "?source")[0]
-				if len(strings.Split(href, "/")) > 2 {
-					hrefSlice = append(hrefSlice, href)
-				}
+				hrefSlice = append(hrefSlice, href)
 			}
 		}
 	})
