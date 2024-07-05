@@ -101,7 +101,6 @@ func searchArticle(channelID string) string {
 	c.OnHTML("span", func(e *colly.HTMLElement) {
 		if re.MatchString(e.Text) {
 
-			// Fonction pour rechercher un lien parmi les parents et leurs descendants
 			findLink := func(e *colly.HTMLElement) *goquery.Selection {
 				a := e.DOM.ParentsUntil("body").Filter("a").First()
 				if a.Length() == 0 {
@@ -119,7 +118,7 @@ func searchArticle(channelID string) string {
 				if href_, exists := a.Attr("href"); exists {
 					long_href := e.Request.AbsoluteURL(href_)
 					href := strings.Split(long_href, "?source")[0]
-					if len(strings.Split(href, "/")) > 4 {
+					if len(strings.Split(href, "/")) > 2 {
 						hrefSlice = append(hrefSlice, href)
 						break
 					} else {
