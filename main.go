@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/bwmarrin/discordgo"
 	"github.com/gocolly/colly/v2"
 	"golang.org/x/exp/slices"
@@ -101,21 +102,36 @@ func searchArticle(channelID string) string {
 	c.OnHTML("span", func(e *colly.HTMLElement) {
 		if re.MatchString(e.Text) {
 
-			// Search <a> elements inside parent
-			a := e.DOM.ParentsUntil("body").Filter("a").First()
-
-			// If no <a> parent is found, then search inside next ones
-			if a.Length() == 0 {
-				a = e.DOM.ParentsUntil("body").Find("a").First()
+			// Fonction pour rechercher un lien parmi les parents et leurs descendants
+			findLink := func(e *colly.HTMLElement) *goquery.Selection {
+				a := e.DOM.ParentsUntil("body").Filter("a").First()
+				if a.Length() == 0 {
+					a = e.DOM.ParentsUntil("body").Find("a").First()
+				}
+				return a
 			}
 
-			if href_, exists := a.Attr("href"); exists {
-				long_href := e.Request.AbsoluteURL(href_)
-				href := strings.Split(long_href, "?source")[0]
-				if !slices.Contains(hrefSlice, href) {
-					if len(strings.Split(href, "/")) > 4 {
-						hrefSlice = append(hrefSlice, href)
+			for {
+				a := findLink(e)
+				if a.Length() == 0 {
+					break
+				}
+
+				if href_, exists := a.Attr("href"); exists {
+					long_href := e.Request.AbsoluteURL(href_)
+					href := strings.Split(long_href, "?source")[0]
+					if !slices.Contains(hrefSlice, href) {
+						if len(strings.Split(href, "/")) > 4 {
+							hrefSlice = append(hrefSlice, href)
+							break
+						} else {
+							e = &colly.HTMLElement{DOM: a.Next()}
+						}
+					} else {
+						break
 					}
+				} else {
+					break
 				}
 			}
 		}
