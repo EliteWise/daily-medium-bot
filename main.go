@@ -87,15 +87,23 @@ func setupEmbed(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
-func searchArticle(channelID string) string {
+func searchArticle(channelID string, tag *string) string {
 	var href = ""
 	var setupData SetupData
 	deserializeData(CONFIG_SOURCE, &setupData)
 
 	c := colly.NewCollector()
+	c.OnRequest(func(r *colly.Request) {
+		log.Printf("Visiting %s", r.URL)
+	})
+
+	c.OnResponse(func(r *colly.Response) {
+		log.Printf("Got response from %s: %d", r.Request.URL, r.StatusCode)
+	})
+
 	var hrefSlice []string
 
-	re := regexp.MustCompile(`\d+\s*h(?:ours?)?\s*ago`)
+	re := regexp.MustCompile(`\d+\s*(?:h(?:ours?)?|d(?:ays?)?)\s*ago`)
 
 	c.OnHTML("span", func(e *colly.HTMLElement) {
 		if re.MatchString(e.Text) {
@@ -122,24 +130,21 @@ func searchArticle(channelID string) string {
 
 	var mc = setupData.MediumCategory
 	log.Println(mc)
-	if len(mc) != 0 {
-		mc = strings.Replace(mc, " ", "-", -1)
-		err1 := c.Visit("https://medium.com/tag/" + mc)
-		if err1 != nil {
-			log.Fatal(err1)
-		}
-	} else {
-		sess.ChannelMessageSend(channelID, "➤ You need to make a configuration with `/setup` command.")
-		sess.ChannelMessageSend(channelID, "➤ A random article is sent at the moment.")
 
-		err1 := c.Visit("https://medium.com/tag/" + getRandomCategory())
-		if err1 != nil {
-			log.Fatal(err1)
-		}
+	var url string
+	if tag == nil {
+		mc = strings.Replace(mc, " ", "-", -1)
+		url = "https://medium.com/tag/" + mc + "/archive"
+	} else {
+		url = "https://medium.com/tag/" + *tag + "/archive"
+	}
+	err := c.Visit(url)
+	if err != nil {
+		log.Printf("Error visiting URL: %v", err)
 	}
 
 	for _, value := range hrefSlice {
-		if !strings.Contains(value, setupData.PreviousArticle) {
+		if setupData.PreviousArticle == "" || !strings.Contains(value, setupData.PreviousArticle) {
 			setupData.PreviousArticle = value
 			serializeData(CONFIG_SOURCE, setupData)
 			return value
@@ -149,7 +154,6 @@ func searchArticle(channelID string) string {
 	fmt.Print(href)
 	return href
 }
-
 func main() {
 	var secrets Secrets
 	deserializeData("secrets.json", &secrets)
@@ -167,7 +171,7 @@ func main() {
 		}
 
 		if m.Content == "!daily" {
-			s.ChannelMessageSend(m.ChannelID, searchArticle(m.ChannelID))
+			s.ChannelMessageSend(m.ChannelID, searchArticle(m.ChannelID, nil))
 		}
 	})
 
@@ -176,6 +180,14 @@ func main() {
 		dailyCommand = &discordgo.ApplicationCommand{
 			Name:        "daily",
 			Description: "Responds with a daily article.",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type:        discordgo.ApplicationCommandOptionString,
+					Name:        "tag",
+					Description: "Search articles by tag (e.g: redis, golang, javascript)",
+					Required:    false,
+				},
+			},
 		}
 		setupCommand = &discordgo.ApplicationCommand{
 			Name:        "setup",
@@ -270,10 +282,16 @@ func main() {
 	sess.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if i.Type == discordgo.InteractionApplicationCommand {
 			if i.ApplicationCommandData().Name == "daily" {
+				options := i.ApplicationCommandData().Options
+				var tag string
+				if len(options) > 0 {
+					tag = options[0].StringValue()
+				}
+
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
 					Data: &discordgo.InteractionResponseData{
-						Content: searchArticle(i.ChannelID),
+						Content: searchArticle(i.ChannelID, &tag),
 					},
 				})
 			} else if i.ApplicationCommandData().Name == "setup" {

@@ -27,9 +27,9 @@ func sendArticle() {
 		var setupData SetupData
 		deserializeData(CONFIG_SOURCE, &setupData)
 		if setupData.Mode == "channel_mode" {
-			sendToChannel(setupData.SelectedChannelID, searchArticle(emptyID))
+			sendToChannel(setupData.SelectedChannelID, searchArticle(emptyID, &setupData.MediumCategory))
 		} else {
-			sendDM(setupData.UserID, searchArticle(emptyID))
+			sendDM(setupData.UserID, searchArticle(emptyID, &setupData.MediumCategory))
 		}
 	})
 

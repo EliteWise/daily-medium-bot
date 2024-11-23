@@ -1,6 +1,6 @@
 # daily-medium-bot
 
-Discord Bot to get a relevant or random article of the Medium platform every day, by defining a category of your choice
+Discord Bot to get a specific article of the Medium platform at any time, by selecting a category
 
 ## Installation
 
@@ -8,8 +8,8 @@ Coming soon...
 
 ## Usage
 
-`/setup`: Define your own configuration <br />
-`/daily`: Ask for your daily article <br />
+`/daily <tag>`: Ask for your daily article in any category <br />
+`/setup`: Define your own configuration to receive article every day at your favorite time (On your server or via DM!) <br />
 
 ## Contributing
 

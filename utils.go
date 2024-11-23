@@ -15,6 +15,17 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+func initializeDefaultSetup() SetupData {
+	return SetupData{
+		Mode:              "",
+		UserID:            "",
+		SelectedChannelID: "",
+		MediumCategory:    "",
+		HourToSend:        "",
+		PreviousArticle:   "",
+	}
+}
+
 func serializeData(json_file string, value interface{}) error {
 	jsonData, err := json.Marshal(value)
 	if err != nil {
@@ -30,7 +41,12 @@ func serializeData(json_file string, value interface{}) error {
 
 func deserializeData(json_file string, value interface{}) error {
 	file, err := os.ReadFile(json_file)
-	if err != nil {
+	if err != nil || len(file) == 0 {
+		if setupData, ok := value.(*SetupData); ok {
+			*setupData = initializeDefaultSetup()
+			serializeData(json_file, setupData)
+			return nil
+		}
 		return fmt.Errorf("failed to read file: %s", err)
 	}
 	// Deserialization of the json file by passing a pointer to the secrets variable, to assign the result
