@@ -1,6 +1,6 @@
 # daily-medium-bot
 
-Discord Bot to get a specific article of the Medium platform at any time, by selecting a category
+Discord Bot to get Medium articles by category on demand, plus automated daily delivery based on your preferences
 
 ## Installation
 
