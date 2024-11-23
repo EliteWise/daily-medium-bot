@@ -8,8 +8,8 @@ Coming soon...
 
 ## Usage
 
-`/daily <tag>`: Ask for your daily article in any category <br />
-`/setup`: Define your own configuration to receive article every day at your favorite time (On your server or via DM!) <br />
+✅ `/daily <tag>`: Ask for your daily article in any category <br />
+⚠️ `/setup`: Define your own configuration to receive article every day at your favorite time (On your server or via DM!) <br />
 
 ## Contributing
 
